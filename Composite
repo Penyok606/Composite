@@ -1,0 +1,79 @@
+Призначення
+Дозволяє користувачам будувати складні структури з простіших компонентів. Проєктувальник може згрупувати дрібні компоненти для формування більших, які, в свою чергу, можуть стати основою для створення ще більших.
+Ключем до паттерну компонувальник є абстрактний клас, який є одночасно і примітивом, і контейнером(Component). У ньому оголошені методи, специфічні для кожного виду об'єкта (такі як Operation) і загальні для всіх складових об'єктів, 
+наприклад операції для доступу і управління нащадками. Підкласи Leaf визначає примітивні об'єкти, які не є контейнерами. У них операція Operation реалізована відповідно до їх специфічних потреб. Оскільки у примітивних об'єктів немає нащадків, 
+то жоден з цих підкласів не реалізує операції, пов'язані з управління нащадками (Add, Remove, GetChild). Клас Composite складається з інших примітивніших об'єктів Component. Реалізована в ньому операція Operation викликає однойменну функцію відтворення
+для кожного нащадка, а операції для роботи з нащадками вже не порожні. Оскільки інтерфейс класу Composite відповідає інтерфейсу Component, то до складу об'єкта Composite можуть входити і інші такі ж об'єкти.
+
+Переваги
+Клієнти використовують інтерфейс класу компонентів для взаємодії з об'єктами у складній структурі.
+Якщо виклик здійснюється в листок, запит обробляється безпосередньо.
+Якщо виклик до Composite, він пересилає запит до своїх дочірніх компонентів.
+
+#include <iostream>
+#include <deque>
+
+using namespace std;
+
+// Інтерфейс компонентів
+struct IQuackable
+{
+	virtual ~IQuackable() {}
+	virtual void print() const = 0;
+};
+// Конкретні компоненти
+struct Duck :public IQuackable
+{
+	virtual void print() const { cout << "Duck " << '\n'; }
+};
+struct MallardDuck :public Duck
+{
+	virtual void print() const { cout << "Mallard Duck" << '\n'; }
+};
+struct RedheadDuck :public Duck
+{
+	virtual void print() const { cout << "Redhead Duck" << '\n'; }
+};
+// Компонувальник
+// Також може бути компонентом
+class Flock : public IQuackable
+{
+protected:
+	deque<IQuackable*> quackers;// контейнер компонентів
+public:
+	virtual void print() const
+	{
+		for (size_t i = 0; i < quackers.size(); ++i)
+		{
+			quackers[i]->print();// псевдо-рекурсивний виклик
+		}
+	}
+	void add(IQuackable* quacker)
+	{
+		quackers.push_back(quacker);
+	}
+	void remove(size_t i)
+	{
+		if (i < quackers.size())
+		{
+			quackers.erase(quackers.begin() + i);
+		}
+	}
+};
+void main()
+{
+	Flock Gang;
+	IQuackable* gang[3] = { new MallardDuck(), new RedheadDuck(), new MallardDuck() };
+	// додаємо компонувальнику компонентів
+	for (int i = 0; i < 3; ++i)
+	{
+		Gang.add(gang[i]);
+	}
+	Flock* Ducks = new Flock;
+	for (int i = 0; i < 3; ++i)
+	{
+		Ducks->add(new Duck());
+	}
+	Gang.add(Ducks); // додаємо компонувальника, як компонент іншого компонувальника
+	Gang.print();
+}
